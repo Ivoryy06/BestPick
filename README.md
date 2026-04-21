@@ -14,9 +14,36 @@ BestPick analyzes images for quality metrics and presents the top 2 candidates f
 
 ## Quick Start
 
+### Linux/macOS
+
 ```bash
+# Build from source
 go build -o bestpick .
+
+# Run scan
 ./bestpick -path ~/Pictures
+
+# Generate HTML report
+./bestpick -path ~/Pictures -html report.html
+
+# Interactive picker
+./bestpick -path ~/Pictures -pick
+```
+
+### Windows
+
+```powershell
+# Build from source
+go build -o bestpick.exe .
+
+# Run scan
+.\bestpick.exe -path "C:\Users\YourName\Pictures"
+
+# Generate HTML report
+.\bestpick.exe -path "C:\Users\YourName\Pictures" -html report.html
+
+# Interactive picker
+.\bestpick.exe -path "C:\Users\YourName\Pictures" -pick
 ```
 
 ## Usage
