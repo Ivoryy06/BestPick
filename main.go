@@ -592,6 +592,70 @@ func generateHTML(groups []DuplicateGroup, outputPath string) error {
 
     init();
   </script>
+
+  <button class="help-btn" onclick="showTutorial()">?</button>
+
+  <div class="tutorial-overlay" id="tutorial" onclick="closeTutorial(event)">
+    <div class="tutorial-modal" onclick="event.stopPropagation()">
+      <div class="tutorial-header">
+        <span class="tutorial-title">How to Use BestPick</span>
+        <button class="tutorial-close" onclick="hideTutorial()">&times;</button>
+      </div>
+
+      <div class="tutorial-section">
+        <p>BestPick analyzes duplicate images and lets you pick the best one based on quality metrics.</p>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>Download & Run</h3>
+        <div class="platform-tabs">
+          <button class="platform-tab active" onclick="switchPlatform('linux')">Linux/macOS</button>
+          <button class="platform-tab" onclick="switchPlatform('windows')">Windows</button>
+        </div>
+        <div class="platform-content active" id="linux-content">
+          <pre><code># Build from source
+go build -o bestpick .
+
+# Run scan
+./bestpick -path ~/Pictures
+
+# Generate HTML report
+./bestpick -path ~/Pictures -html report.html</code></pre>
+        </div>
+        <div class="platform-content" id="windows-content">
+          <pre><code># Build from source
+go build -o bestpick.exe .
+
+# Run scan
+.\bestpick.exe -path "C:\Users\YourName\Pictures"
+
+# Generate HTML report
+.\bestpick.exe -path "C:\Users\YourName\Pictures" -html report.html</code></pre>
+        </div>
+      </div>
+
+      <div class="tutorial-section">
+        <h3>Flags</h3>
+        <pre><code>-path        Directory to scan (default: .)
+-threshold   Perceptual distance (default: 10)
+-quality-only Find exact duplicates only
+-json        Output JSON file
+-html        Output HTML report</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showTutorial() { document.getElementById('tutorial').classList.add('active'); }
+    function hideTutorial() { document.getElementById('tutorial').classList.remove('active'); }
+    function closeTutorial(e) { if (e.target.id === 'tutorial') hideTutorial(); }
+    function switchPlatform(platform) {
+      document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.platform-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(platform + '-content').classList.add('active');
+    }
+  </script>
 </body>
 </html>`
 
