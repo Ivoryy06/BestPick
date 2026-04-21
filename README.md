@@ -9,12 +9,13 @@ BestPick analyzes images for quality metrics and presents the top 2 candidates f
 - **Quality scoring** - blur detection, noise analysis, resolution comparison
 - **Duplicate grouping** - groups similar/duplicate images
 - **Interactive picker** - compare top 2 candidates with detailed stats
+- **Web UI** - generates beautiful HTML report for browser-based selection
 - **Local processing** - no API calls, runs entirely on your machine
 
 ## Quick Start
 
 ```bash
-go build -o bestpick main.go picker.go
+go build -o bestpick .
 ./bestpick -path ~/Pictures
 ```
 
@@ -32,7 +33,22 @@ go build -o bestpick main.go picker.go
 
 # Output JSON for integration
 ./bestpick -path ~/Pictures -json results.json
+
+# Generate interactive HTML report
+./bestpick -path ~/Pictures -html report.html
+
+# Interactive terminal picker
+./bestpick -path ~/Pictures -pick
 ```
+
+## Web UI
+
+The HTML output provides an interactive card-based interface:
+
+- Purple/violet theme with dark mode support
+- Shows top 2 candidates per group with quality scores
+- Click or use buttons to select your preferred image
+- Displays blur score, noise, resolution, and file size
 
 ## Quality Metrics
 
@@ -42,6 +58,7 @@ go build -o bestpick main.go picker.go
 | **Noise Score** | Grain level - lower is better |
 | **Resolution** | Pixel dimensions |
 | **File Size** | Actual file size |
+| **Quality** | Combined score (0-100) |
 
 ## Project Structure
 
@@ -49,8 +66,10 @@ go build -o bestpick main.go picker.go
 .
 ├── main.go      # Core analysis engine
 ├── picker.go    # Interactive picker UI
+├── index.html   # Web UI template
 ├── go.mod      # Go module
-└── README.md   # This file
+├── README.md   # This file
+└── LICENSE     # MIT License
 ```
 
 ## License

@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/disintegration/gift"
 	"github.com/sirupsen/logrus"
@@ -42,6 +43,7 @@ var (
 	outputJSON  string
 	qualityOnly bool
 	pickMode    bool
+	outputHTML  string
 )
 
 func init() {
@@ -49,6 +51,7 @@ func init() {
 	flag.IntVar(&threshold, "threshold", 10, "Perceptual distance threshold")
 	flag.BoolVar(&verbose, "v", false, "Verbose output")
 	flag.StringVar(&outputJSON, "json", "", "Output results as JSON")
+	flag.StringVar(&outputHTML, "html", "", "Output results as HTML")
 	flag.BoolVar(&qualityOnly, "quality-only", false, "Only find exact duplicates by hash")
 	flag.BoolVar(&pickMode, "pick", false, "Interactive picker mode")
 }
@@ -111,6 +114,11 @@ func main() {
 		data, _ := json.MarshalIndent(groups, "", "  ")
 		os.WriteFile(outputJSON, data, 0644)
 		logrus.Infof("Results saved to %s", outputJSON)
+		return
+	}
+
+	if outputHTML != "" {
+		generateHTML(groups, outputHTML)
 		return
 	}
 
@@ -366,4 +374,229 @@ func printResults(groups []DuplicateGroup) {
 		fmt.Println("Pick the best: run with -pick group_index")
 		fmt.Println()
 	}
+}
+
+func generateHTML(groups []DuplicateGroup, outputPath string) error {
+	htmlStart := `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BestPick · Image Picker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #faf5ff;
+      --surface: #f3e8ff;
+      --border:  #d8b4fe;
+      --accent:  #9333ea;
+      --muted:   #a855f7;
+      --text:    #3b0764;
+      --ok:      #22c55e;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:      #0f0a1a;
+        --surface: #1e1229;
+        --border:  #3b2a52;
+        --accent:  #c084fc;
+        --muted:   #8b6fa8;
+        --text:    #e9d5ff;
+        --ok:      #4ade80;
+      }
+    }
+
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 2rem 1rem;
+      line-height: 1.5;
+    }
+
+    header, main { max-width: 900px; margin: 0 auto; }
+    header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; }
+
+    h1 { font-size: 1.8rem; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
+    .sub { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin-top: 0.2rem; }
+    #gen-time { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
+
+    main { display: grid; gap: 1.5rem; }
+
+    section {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 14px;
+      padding: 1.2rem 1.4rem;
+    }
+
+    h2 { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 1.2rem; }
+
+    .stats { display: flex; gap: 2rem; flex-wrap: wrap; }
+    .stat { display: flex; flex-direction: column; }
+    .stat-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+
+    .picker-section { text-align: center; padding: 2rem; }
+    .picker-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--accent); }
+    .picker-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .picker-btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+    .picker-btn:hover { transform: scale(1.02); }
+    .picker-btn.select { background: var(--accent); color: white; }
+    .picker-btn.skip { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+
+    .group { background: var(--surface); border: 0.5px solid var(--border); border-radius: 14px; padding: 1.2rem 1.4rem; }
+    .group-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .group-title { font-size: 0.9rem; font-weight: 600; color: var(--text); }
+    .group-badge { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; padding: 0.25rem 0.5rem; border-radius: 4px; background: var(--accent); color: white; }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+
+    .card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; position: relative; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(147, 51, 234, 0.15); }
+    .card.best { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+    .card-badge { position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.6rem; text-transform: uppercase; padding: 0.2rem 0.4rem; border-radius: 4px; background: var(--accent); color: white; }
+
+    .card-image { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .card-content { padding: 0.8rem; }
+    .card-path { font-size: 0.75rem; color: var(--muted); word-break: break-all; margin-bottom: 0.5rem; }
+
+    .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.7rem; }
+    .card-stat { display: flex; flex-direction: column; }
+    .card-stat-label { color: var(--muted); font-size: 0.6rem; text-transform: uppercase; }
+    .card-stat-value { font-weight: 600; color: var(--text); }
+
+    .quality-bar { grid-column: 1 / -1; margin-top: 0.5rem; }
+    .quality-label { display: flex; justify-content: space-between; font-size: 0.65rem; margin-bottom: 0.25rem; }
+    .quality-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .quality-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--muted)); border-radius: 3px; }
+
+    .no-groups { text-align: center; padding: 3rem; color: var(--muted); }
+
+    @media (max-width: 600px) {
+      header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+      .stats { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>BestPick</h1>
+      <div class="sub">AI-Powered Image Picker</div>
+    </div>
+    <div id="gen-time"></div>
+  </header>
+
+  <main id="app">
+    <section>
+      <h2>Summary</h2>
+      <div class="stats" id="summary"></div>
+    </section>
+
+    <section class="picker-section">
+      <div class="picker-title">Pick Your Best Image</div>
+      <div class="picker-buttons">
+        <button class="picker-btn select" id="btn-1" onclick="selectImage(1)">Select Left</button>
+        <button class="picker-btn select" id="btn-2" onclick="selectImage(2)">Select Right</button>
+        <button class="picker-btn skip" onclick="skipGroup()">Skip</button>
+      </div>
+    </section>
+
+    <div id="groups"></div>
+  </main>
+
+  <script>
+    const data = DATA_PLACEHOLDER;
+    let currentGroup = 0;
+    let selectedImages = [];
+
+    function init() {
+      document.getElementById('gen-time').textContent = 'Generated: ' + new Date().toLocaleString();
+      
+      var totalImages = 0;
+      for (var i = 0; i < data.length; i++) {
+        totalImages += data[i].Images.length;
+      }
+      
+      var html = '<div class="stat"><span class="stat-label">Groups</span><span class="stat-value">' + data.length + '</span></div>';
+      html += '<div class="stat"><span class="stat-label">Total Images</span><span class="stat-value">' + totalImages + '</span></div>';
+      html += '<div class="stat"><span class="stat-label">Selected</span><span class="stat-value" id="selected-count">0</span></div>';
+      document.getElementById('summary').innerHTML = html;
+
+      renderGroup();
+    }
+
+    function renderGroup() {
+      var container = document.getElementById('groups');
+      container.innerHTML = '';
+
+      if (currentGroup >= data.length) {
+        container.innerHTML = '<section class="no-groups"><h2>All Done!</h2><p>Reviewed all ' + data.length + ' groups.</p><p>Selected: ' + selectedImages.length + ' images</p></section>';
+        document.querySelector('.picker-section').style.display = 'none';
+        return;
+      }
+
+      var group = data[currentGroup];
+      var bestIdx = group.BestPick;
+      var secondIdx = group.SecondPick;
+      var html = '<div class="group"><div class="group-header"><span class="group-title">Group ' + (currentGroup + 1) + ' of ' + data.length + '</span><span class="group-badge">2 Candidates</span></div><div class="cards">';
+
+      var indices = [[bestIdx, true], [secondIdx, false]];
+      for (var i = 0; i < indices.length; i++) {
+        var idx = indices[i][0];
+        var isBest = indices[i][1];
+        var img = group.Images[idx];
+        var cardClass = isBest ? 'card best' : 'card';
+        var badge = isBest ? '★ Best' : '☆ Second';
+        var choice = isBest ? 1 : 2;
+        var filename = img.Path.split('/').pop();
+        
+        html += '<div class="' + cardClass + '" onclick="selectImage(' + choice + ')">';
+        html += '<span class="card-badge">' + badge + '</span>';
+        html += '<img class="card-image" src="file://' + img.Path + '" alt="" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22>No Preview</text></svg>\'" />';
+        html += '<div class="card-content"><div class="card-path">' + filename + '</div>';
+        html += '<div class="card-stats">';
+        html += '<div class="card-stat"><span class="card-stat-label">Resolution</span><span class="card-stat-value">' + img.Width + 'x' + img.Height + '</span></div>';
+        html += '<div class="card-stat"><span class="card-stat-label">File Size</span><span class="card-stat-value">' + formatSize(img.FileSize) + '</span></div>';
+        html += '<div class="card-stat"><span class="card-stat-label">Blur Score</span><span class="card-stat-value">' + img.BlurScore.toFixed(2) + '</span></div>';
+        html += '<div class="card-stat"><span class="card-stat-label">Noise</span><span class="card-stat-value">' + img.NoiseScore.toFixed(2) + '</span></div>';
+        html += '<div class="quality-bar"><div class="quality-label"><span class="card-stat-label">Quality Score</span><span class="card-stat-value">' + img.Quality + '/100</span></div>';
+        html += '<div class="quality-track"><div class="quality-fill" style="width:' + img.Quality + '%"></div></div></div></div></div>';
+      }
+
+      html += '</div></div>';
+      container.innerHTML = html;
+    }
+
+    function selectImage(choice) {
+      if (currentGroup >= data.length) return;
+      var group = data[currentGroup];
+      var idx = choice === 1 ? group.BestPick : group.SecondPick;
+      selectedImages.push({ group: currentGroup + 1, path: group.Images[idx].Path, quality: group.Images[idx].Quality });
+      document.getElementById('selected-count').textContent = selectedImages.length;
+      currentGroup++;
+      renderGroup();
+    }
+
+    function skipGroup() { currentGroup++; renderGroup(); }
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    init();
+  </script>
+</body>
+</html>`
+
+	data, _ := json.MarshalIndent(groups, "", "  ")
+	html := strings.Replace(htmlStart, "DATA_PLACEHOLDER", string(data), 1)
+	html = strings.Replace(html, "{{ .GenTime }}", time.Now().Format(time.RFC1123), 1)
+	return os.WriteFile(outputPath, []byte(html), 0644)
 }
