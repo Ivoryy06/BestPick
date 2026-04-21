@@ -24,7 +24,7 @@ func RunPicker(groups []DuplicateGroup) {
 
 	fmt.Println("\n=== Interactive Image Picker ===")
 	fmt.Println("For each group, you'll see the top 2 candidates.")
-	fmt.Println("Enter 1 or 2 to select your preferred image, or 's' to skip.\n")
+	fmt.Println("Enter 1 or 2 to select your preferred image, or 's' to skip.")
 
 	results := []PickerResult{}
 
@@ -44,13 +44,13 @@ func RunPicker(groups []DuplicateGroup) {
 		input = strings.TrimSpace(strings.ToLower(input))
 
 		if input == "s" || input == "skip" {
-			fmt.Println("Skipped.\n")
+			fmt.Println("Skipped.")
 			continue
 		}
 
 		choice, err := strconv.Atoi(input)
 		if err != nil || (choice != 1 && choice != 2) {
-			fmt.Println("Invalid choice, skipping.\n")
+			fmt.Println("Invalid choice, skipping.")
 			continue
 		}
 
