@@ -324,138 +324,23 @@
       }
     }
 
-    .help-btn {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: white;
-      border: none;
-      font-size: 1.2rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);
-      transition: transform 0.2s;
-      z-index: 100;
-    }
+    .link-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.5rem; }
+    .link-pill { border: 0.5px solid var(--border); background: var(--code-bg); color: var(--text); padding: 6px 10px; border-radius: 999px; font-size: 0.78rem; text-decoration: none; }
+    .link-pill:hover { filter: brightness(0.97); }
 
-    .help-btn:hover {
-      transform: scale(1.1);
-    }
-
-    .tutorial-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-
-    .tutorial-overlay.active {
-      display: flex;
-    }
-
-    .tutorial-modal {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      max-width: 700px;
-      max-height: 85vh;
-      overflow-y: auto;
-      padding: 2rem;
-    }
-
-    .tutorial-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .tutorial-title {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--accent);
-    }
-
-    .tutorial-close {
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0.25rem;
-      line-height: 1;
-    }
-
-    .tutorial-section {
-      margin-bottom: 1.5rem;
-    }
-
-    .tutorial-section h3 {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
-      margin-bottom: 0.75rem;
-    }
-
-    .tutorial-section pre {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-      overflow-x: auto;
-      font-size: 0.8rem;
-      line-height: 1.6;
-    }
-
-    .tutorial-section code {
-      color: var(--accent);
-    }
-
-    .tutorial-section p {
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-bottom: 0.75rem;
-    }
-
-    .platform-tabs {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .platform-tab {
-      padding: 0.5rem 1rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: var(--bg);
-      color: var(--muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .platform-tab.active {
-      background: var(--accent);
-      color: white;
-      border-color: var(--accent);
-    }
-
-    .platform-content {
-      display: none;
-    }
-
-    .platform-content.active {
-      display: block;
-    }
+    .guide { display: flex; flex-direction: column; gap: 1rem; }
+    .guide-step { display: flex; gap: 12px; }
+    .guide-step .num { width: 24px; height: 24px; border-radius: 50%; background: var(--border); color: var(--accent); font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+    .guide-step .body { flex: 1; }
+    .guide-step .body p { font-size: 0.85rem; margin-bottom: 4px; color: var(--text); }
+    .note { font-size: 0.8rem; color: var(--muted); line-height: 1.4; margin-top: 0.5rem; }
+    pre { background: var(--code-bg); border-radius: 8px; padding: 0.6rem 0.9rem; font-size: 0.78rem; overflow-x: auto; color: var(--text); font-family: monospace; }
+    code { font-family: monospace; background: var(--code-bg); padding: 2px 5px; border-radius: 4px; font-size: 0.85em; }
+    .split { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .mini { border: 0.5px solid var(--border); border-radius: 10px; padding: 0.9rem 1rem; }
+    .mini h3 { font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.6rem; }
+    .bullet-list { display: grid; gap: 6px; font-size: 0.84rem; }
+    .bullet-list div { line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -614,81 +499,6 @@
     }
 
     init();
-  </script>
-
-  <button class="help-btn" onclick="showTutorial()">?</button>
-
-  <div class="tutorial-overlay" id="tutorial" onclick="closeTutorial(event)">
-    <div class="tutorial-modal" onclick="event.stopPropagation()">
-      <div class="tutorial-header">
-        <span class="tutorial-title">How to Use BestPick</span>
-        <button class="tutorial-close" onclick="hideTutorial()">&times;</button>
-      </div>
-
-      <div class="tutorial-section">
-        <p>BestPick analyzes duplicate images and lets you pick the best one based on quality metrics.</p>
-      </div>
-
-      <div class="tutorial-section">
-        <h3>Download & Run</h3>
-        <div class="platform-tabs">
-          <button class="platform-tab active" onclick="switchPlatform('linux')">Linux/macOS</button>
-          <button class="platform-tab" onclick="switchPlatform('windows')">Windows</button>
-        </div>
-        <div class="platform-content active" id="linux-content">
-          <pre><code># Build from source
-go build -o bestpick .
-
-# Run scan
-./bestpick -path ~/Pictures
-
-# Generate HTML report
-./bestpick -path ~/Pictures -html report.html</code></pre>
-        </div>
-        <div class="platform-content" id="windows-content">
-          <pre><code># Build from source
-go build -o bestpick.exe .
-
-# Run scan
-.\bestpick.exe -path "C:\Users\YourName\Pictures"
-
-# Generate HTML report
-.\bestpick.exe -path "C:\Users\YourName\Pictures" -html report.html</code></pre>
-        </div>
-      </div>
-
-      <div class="tutorial-section">
-        <h3>Flags</h3>
-        <pre><code>-path        Directory to scan (default: .)
--threshold   Perceptual distance (default: 10)
--quality-only Find exact duplicates only
--json        Output JSON file
--html        Output HTML report</code></pre>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    function showTutorial() {
-      document.getElementById('tutorial').classList.add('active');
-    }
-
-    function hideTutorial() {
-      document.getElementById('tutorial').classList.remove('active');
-    }
-
-    function closeTutorial(e) {
-      if (e.target.id === 'tutorial') {
-        hideTutorial();
-      }
-    }
-
-    function switchPlatform(platform) {
-      document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.platform-content').forEach(c => c.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById(platform + '-content').classList.add('active');
-    }
   </script>
 </body>
 </html>
